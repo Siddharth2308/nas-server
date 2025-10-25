@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAS Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: #2f2f2f;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .header p {
+            color: #6b6b6b;
+            font-size: 0.95rem;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e5e5e5;
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #2f2f2f;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #d4d4d4;
+            transition: background 0.3s ease;
+        }
+
+        .status-indicator.on {
+            background: #22c55e;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+        }
+
+        .status-indicator.off {
+            background: #ef4444;
+        }
+
+        .status-indicator.checking {
+            background: #f59e0b;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .card-subtitle {
+            color: #8e8e8e;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-start {
+            background: #2f2f2f;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #1a1a1a;
+        }
+
+        .btn-stop {
+            background: #e5e5e5;
+            color: #2f2f2f;
+        }
+
+        .btn-stop:hover {
+            background: #d4d4d4;
+        }
+
+        .btn-check {
+            background: #2f2f2f;
+            color: white;
+        }
+
+        .btn-check:hover {
+            background: #1a1a1a;
+        }
+
+        .btn-refresh {
+            background: #e5e5e5;
+            color: #2f2f2f;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+
+        .btn-refresh:hover {
+            background: #d4d4d4;
+        }
+
+        .status {
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.success {
+            background: #f0f9f4;
+            color: #2f5a3f;
+            border: 1px solid #d4edda;
+        }
+
+        .status.error {
+            background: #fef2f2;
+            color: #7f1d1d;
+            border: 1px solid #fecaca;
+        }
+
+        .status.info {
+            background: #f0f4f8;
+            color: #1e3a5f;
+            border: 1px solid #d4e3f0;
+        }
+
+        .space-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .space-item {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .space-item strong {
+            display: block;
+            color: #6b6b6b;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .space-item span {
+            font-size: 1.1rem;
+            color: #2f2f2f;
+            font-weight: 500;
+        }
+
+        .iframe-container {
+            display: none;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e5e5e5;
+            background: white;
+        }
+
+        .iframe-container.show {
+            display: block;
+        }
+
+        .iframe-header {
+            background: #2f2f2f;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .iframe-header h3 {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .close-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        iframe {
+            width: 100%;
+            height: 750px;
+            border: none;
+            background: white;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .controls-row {
+                flex-direction: column;
+            }
+            
+            iframe {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>NAS Control Panel</h1>
+            <p>Manage your network storage services</p>
+            <button class="btn-refresh" onclick="checkStatus()" style="margin-top: 10px;">
+                🔄 Refresh Status
+            </button>
+        </div>
+
+        <div class="controls-row">
+            <!-- HDD Control -->
+            <div class="card">
+                <h2>
+                    <span class="status-indicator" id="hdd-indicator"></span>
+                    💾 HDD Storage
+                </h2>
+                <p class="card-subtitle">Port 8080 • /mnt/data</p>
+                <div class="button-group">
+                    <button class="btn-start" onclick="startHDD()">Start</button>
+                    <button class="btn-stop" onclick="stopHDD()">Stop</button>
+                </div>
+                <div id="hdd-status" class="status"></div>
+            </div>
+
+            <!-- HOME Control -->
+            <div class="card">
+                <h2>
+                    <span class="status-indicator" id="home-indicator"></span>
+                    🏠 Home Directory
+                </h2>
+                <p class="card-subtitle">Port 8081 • /home/siddharth</p>
+                <div class="button-group">
+                    <button class="btn-start" onclick="startHome()">Start</button>
+                    <button class="btn-stop" onclick="stopHome()">Stop</button>
+                </div>
+                <div id="home-status" class="status"></div>
+            </div>
+
+            <!-- Storage Space -->
+            <div class="card">
+                <h2>📊 Storage Space</h2>
+                <p class="card-subtitle">SSD & HDD Usage</p>
+                <button class="btn-check" onclick="checkSpace()" style="width: 100%;">
+                    Check Space
+                </button>
+                <div class="space-info" id="space-info" style="display: none;">
+                    <!-- Space info will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- HDD iframe -->
+        <div class="iframe-container" id="hdd-iframe-container">
+            <div class="iframe-header">
+                <h3>HDD Storage Browser</h3>
+                <button class="close-btn" onclick="closeHDDIframe()">Close</button>
+            </div>
+            <iframe id="hdd-iframe" src=""></iframe>
+        </div>
+
+        <!-- HOME iframe -->
+        <div class="iframe-container" id="home-iframe-container">
+            <div class="iframe-header">
+                <h3>Home Directory Browser</h3>
+                <button class="close-btn" onclick="closeHomeIframe()">Close</button>
+            </div>
+            <iframe id="home-iframe" src=""></iframe>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://100.91.55.2:8082';
+        const HDD_URL = 'http://100.91.55.2:8080/';
+        const HOME_URL = 'http://100.91.55.2:8081/';
+
+        // Check status on page load only
+        checkStatus();
+
+        async function checkStatus() {
+            const button = event?.target;
+            if (button) addLoadingSpinner(button);
+            
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateIndicator('hdd-indicator', data.hdd.running);
+                    updateIndicator('home-indicator', data.home.running);
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+                updateIndicator('hdd-indicator', null);
+                updateIndicator('home-indicator', null);
+            } finally {
+                if (button) removeLoadingSpinner(button);
+            }
+        }
+
+        function updateIndicator(elementId, isRunning) {
+            const indicator = document.getElementById(elementId);
+            indicator.className = 'status-indicator';
+            
+            if (isRunning === true) {
+                indicator.classList.add('on');
+                indicator.title = 'Running';
+            } else if (isRunning === false) {
+                indicator.classList.add('off');
+                indicator.title = 'Stopped';
+            } else {
+                indicator.classList.add('checking');
+                indicator.title = 'Checking...';
+            }
+        }
+
+        function showStatus(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = `status show ${type}`;
+            setTimeout(() => {
+                el.classList.remove('show');
+            }, 5000);
+        }
+
+        function addLoadingSpinner(button) {
+            const spinner = document.createElement('span');
+            spinner.className = 'loading';
+            button.appendChild(spinner);
+            button.disabled = true;
+        }
+
+        function removeLoadingSpinner(button) {
+            const spinner = button.querySelector('.loading');
+            if (spinner) spinner.remove();
+            button.disabled = false;
+        }
+
+        async function startHDD() {
+            const button = event.target;
+            addLoadingSpinner(button);
+            
+            try {
+                const response = await fetch(`${API_BASE}/hdd/start`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('hdd-status', `✓ ${data.status} (PID: ${data.pid})`, 'success');
+                    openHDDIframe();
+                    checkStatus(); // Update status immediately
+                } else {
+                    showStatus('hdd-status', `✗ ${data.error || 'Failed to start'}`, 'error');
+                }
+            } catch (error) {
+                showStatus('hdd-status', `✗ Error: ${error.message}`, 'error');
+            } finally {
+                removeLoadingSpinner(button);
+            }
+        }
+
+        async function stopHDD() {
+            const button = event.target;
+            addLoadingSpinner(button);
+            
+            try {
+                const response = await fetch(`${API_BASE}/hdd/stop`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('hdd-status', `✓ ${data.status}`, 'success');
+                    closeHDDIframe();
+                    checkStatus(); // Update status immediately
+                } else {
+                    showStatus('hdd-status', `✗ ${data.error || 'Failed to stop'}`, 'error');
+                }
+            } catch (error) {
+                showStatus('hdd-status', `✗ Error: ${error.message}`, 'error');
+            } finally {
+                removeLoadingSpinner(button);
+            }
+        }
+
+        async function startHome() {
+            const button = event.target;
+            addLoadingSpinner(button);
+            
+            try {
+                const response = await fetch(`${API_BASE}/home/start`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('home-status', `✓ ${data.status} (PID: ${data.pid})`, 'success');
+                    openHomeIframe();
+                    checkStatus(); // Update status immediately
+                } else {
+                    showStatus('home-status', `✗ ${data.error || 'Failed to start'}`, 'error');
+                }
+            } catch (error) {
+                showStatus('home-status', `✗ Error: ${error.message}`, 'error');
+            } finally {
+                removeLoadingSpinner(button);
+            }
+        }
+
+        async function stopHome() {
+            const button = event.target;
+            addLoadingSpinner(button);
+            
+            try {
+                const response = await fetch(`${API_BASE}/home/stop`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('home-status', `✓ ${data.status}`, 'success');
+                    closeHomeIframe();
+                    checkStatus(); // Update status immediately
+                } else {
+                    showStatus('home-status', `✗ ${data.error || 'Failed to stop'}`, 'error');
+                }
+            } catch (error) {
+                showStatus('home-status', `✗ Error: ${error.message}`, 'error');
+            } finally {
+                removeLoadingSpinner(button);
+            }
+        }
+
+        async function checkSpace() {
+            const button = event.target;
+            addLoadingSpinner(button);
+            
+            try {
+                const [ssdResponse, hddResponse] = await Promise.all([
+                    fetch(`${API_BASE}/space/ssd`),
+                    fetch(`${API_BASE}/space/hdd`)
+                ]);
+                
+                const ssdData = await ssdResponse.json();
+                const hddData = await hddResponse.json();
+                
+                const spaceInfo = document.getElementById('space-info');
+                spaceInfo.style.display = 'grid';
+                
+                spaceInfo.innerHTML = `
+                    <div class="space-item">
+                        <strong>SSD Total</strong>
+                        <span>${ssdData.total || 'N/A'}</span>
+                    </div>
+                    <div class="space-item">
+                        <strong>HDD Total</strong>
+                        <span>${hddData.total || 'N/A'}</span>
+                    </div>
+
+                    <div class="space-item">
+                        <strong>SSD Available</strong>
+                        <span>${ssdData.available || 'N/A'}</span>
+                    </div>
+                    <div class="space-item">
+                        <strong>HDD Available</strong>
+                        <span>${hddData.available || 'N/A'}</span>
+                    </div>
+                    
+                    <div class="space-item">
+                        <strong>SSD Used</strong>
+                        <span>${ssdData.used || 'N/A'} (${ssdData.usedPercent || 'N/A'})</span>
+                    </div>
+
+                    <div class="space-item">
+                        <strong>HDD Used</strong>
+                        <span>${hddData.used || 'N/A'} (${hddData.usedPercent || 'N/A'})</span>
+                    </div>
+                `;
+            } catch (error) {
+                alert(`Error checking space: ${error.message}`);
+            } finally {
+                removeLoadingSpinner(button);
+            }
+        }
+
+        function openHDDIframe() {
+            const container = document.getElementById('hdd-iframe-container');
+            const iframe = document.getElementById('hdd-iframe');
+            iframe.src = HDD_URL;
+            container.classList.add('show');
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function closeHDDIframe() {
+            const container = document.getElementById('hdd-iframe-container');
+            const iframe = document.getElementById('hdd-iframe');
+            container.classList.remove('show');
+            iframe.src = '';
+        }
+
+        function openHomeIframe() {
+            const container = document.getElementById('home-iframe-container');
+            const iframe = document.getElementById('home-iframe');
+            iframe.src = HOME_URL;
+            container.classList.add('show');
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function closeHomeIframe() {
+            const container = document.getElementById('home-iframe-container');
+            const iframe = document.getElementById('home-iframe');
+            container.classList.remove('show');
+            iframe.src = '';
+        }
+    </script>
+</body>
+</html>
