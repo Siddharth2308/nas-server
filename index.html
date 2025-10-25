@@ -344,7 +344,6 @@
         <div class="iframe-container" id="hdd-iframe-container">
             <div class="iframe-header">
                 <h3>HDD Storage Browser</h3>
-                <button class="close-btn" onclick="closeHDDIframe()">Close</button>
             </div>
             <iframe id="hdd-iframe" src=""></iframe>
         </div>
@@ -353,7 +352,6 @@
         <div class="iframe-container" id="home-iframe-container">
             <div class="iframe-header">
                 <h3>Home Directory Browser</h3>
-                <button class="close-btn" onclick="closeHomeIframe()">Close</button>
             </div>
             <iframe id="home-iframe" src=""></iframe>
         </div>
@@ -361,8 +359,8 @@
 
     <script>
         const API_BASE = 'https://100.91.55.2:8082';
-        const HDD_URL = 'https://100.91.55.2:8080/';
-        const HOME_URL = 'https://100.91.55.2:8081/';
+        const HDD_URL = 'http://100.91.55.2:8080/';
+        const HOME_URL = 'http://100.91.55.2:8081/';
 
         // Check status on page load only
         checkStatus();
@@ -539,7 +537,6 @@
                         <strong>HDD Total</strong>
                         <span>${hddData.total || 'N/A'}</span>
                     </div>
-
                     <div class="space-item">
                         <strong>SSD Available</strong>
                         <span>${ssdData.available || 'N/A'}</span>
@@ -548,7 +545,7 @@
                         <strong>HDD Available</strong>
                         <span>${hddData.available || 'N/A'}</span>
                     </div>
-                    
+
                     <div class="space-item">
                         <strong>SSD Used</strong>
                         <span>${ssdData.used || 'N/A'} (${ssdData.usedPercent || 'N/A'})</span>
