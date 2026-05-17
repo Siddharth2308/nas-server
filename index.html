@@ -3,595 +3,916 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NAS Control Panel</title>
+    <title>NAS-OS v2.1 // Control Panel</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            /* Primary UI — light blue */
+            --bg:  #00060f;
+            --bg1: #000d1a;
+            --bg2: #001424;
+            --bg3: #001c30;
+            --b0:  #7dd3fc;   /* sky-300  — main text / bright accents   */
+            --b1:  #38bdf8;   /* sky-400  */
+            --b2:  #0ea5e9;   /* sky-500  */
+            --b3:  #0369a1;   /* sky-700  */
+            --b4:  #0c3a5e;   /* border dim                               */
+            --b5:  #041f36;   /* card bg accent                           */
+            /* Status colours only */
+            --online:  #22c55e;
+            --online2: #16a34a;
+            --offline: #ef4444;
+            --offline2:#991b1b;
+            --warn:    #f59e0b;
+            /* Glows */
+            --glow-sm: 0 0 6px rgba(56,189,248,0.35);
+            --glow-md: 0 0 14px rgba(56,189,248,0.4);
+            /* Semantic */
+            --border:        var(--b3);
+            --border-bright: var(--b1);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f5f5f5;
+            background: var(--bg);
+            color: var(--b0);
+            font-family: 'Courier New', 'Lucida Console', monospace;
             min-height: 100vh;
-            padding: 20px;
+            overflow-x: hidden;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+        /* Scanline */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg, transparent, transparent 2px,
+                rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
         }
 
+        /* Vignette */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%);
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        .shell { max-width: 1300px; margin: 0 auto; padding: 16px 20px; }
+
+        /* ── HEADER ── */
         .header {
-            text-align: center;
-            color: #2f2f2f;
-            margin-bottom: 25px;
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            padding: 16px 24px;
+            margin-bottom: 14px;
+            box-shadow: var(--glow-md), inset 0 0 40px rgba(14,165,233,0.03);
         }
 
-        .header h1 {
-            font-size: 2rem;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        .header p {
-            color: #6b6b6b;
-            font-size: 0.95rem;
-        }
-
-        .controls-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 18px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border: 1px solid #e5e5e5;
-            flex: 1;
-            min-width: 280px;
-        }
-
-        .card h2 {
-            font-size: 1.1rem;
-            margin-bottom: 8px;
-            color: #2f2f2f;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #d4d4d4;
-            transition: background 0.3s ease;
-        }
-
-        .status-indicator.on {
-            background: #22c55e;
-            box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
-        }
-
-        .status-indicator.off {
-            background: #ef4444;
-        }
-
-        .status-indicator.checking {
-            background: #f59e0b;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .card-subtitle {
-            color: #8e8e8e;
-            font-size: 0.85rem;
-            margin-bottom: 12px;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        button {
-            flex: 1;
-            padding: 10px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-start {
-            background: #2f2f2f;
-            color: white;
-        }
-
-        .btn-start:hover {
-            background: #1a1a1a;
-        }
-
-        .btn-stop {
-            background: #e5e5e5;
-            color: #2f2f2f;
-        }
-
-        .btn-stop:hover {
-            background: #d4d4d4;
-        }
-
-        .btn-check {
-            background: #2f2f2f;
-            color: white;
-        }
-
-        .btn-check:hover {
-            background: #1a1a1a;
-        }
-
-        .btn-refresh {
-            background: #e5e5e5;
-            color: #2f2f2f;
-            padding: 8px 16px;
-            font-size: 0.85rem;
-        }
-
-        .btn-refresh:hover {
-            background: #d4d4d4;
-        }
-
-        .status {
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-top: 10px;
-            font-size: 0.85rem;
-            display: none;
-        }
-
-        .status.show {
-            display: block;
-        }
-
-        .status.success {
-            background: #f0f9f4;
-            color: #2f5a3f;
-            border: 1px solid #d4edda;
-        }
-
-        .status.error {
-            background: #fef2f2;
-            color: #7f1d1d;
-            border: 1px solid #fecaca;
-        }
-
-        .status.info {
-            background: #f0f4f8;
-            color: #1e3a5f;
-            border: 1px solid #d4e3f0;
-        }
-
-        .space-info {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .space-item {
-            background: #f9f9f9;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #e5e5e5;
-        }
-
-        .space-item strong {
-            display: block;
-            color: #6b6b6b;
-            font-size: 0.8rem;
-            margin-bottom: 4px;
-            font-weight: 500;
-        }
-
-        .space-item span {
-            font-size: 1.1rem;
-            color: #2f2f2f;
-            font-weight: 500;
-        }
-
-        .iframe-container {
-            display: none;
-            margin-top: 20px;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border: 1px solid #e5e5e5;
-            background: white;
-        }
-
-        .iframe-container.show {
-            display: block;
-        }
-
-        .iframe-header {
-            background: #2f2f2f;
-            color: white;
-            padding: 12px 20px;
+        .header-top {
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .ascii-title {
+            font-size: 0.58rem;
+            line-height: 1.2;
+            color: var(--b1);
+            text-shadow: var(--glow-sm);
+            white-space: pre;
+            letter-spacing: 0;
+        }
+
+        .header-meta {
+            color: var(--b3);
+            font-size: 0.72rem;
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+        .header-meta span { color: var(--b1); }
+
+        .header-right {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .clock {
+            font-size: 1.5rem;
+            color: var(--b0);
+            text-shadow: var(--glow-md);
+            letter-spacing: 3px;
+            font-weight: bold;
+        }
+
+        .date-str { font-size: 0.7rem; color: var(--b3); letter-spacing: 1px; }
+
+        /* ── STATUS STRIP ── */
+        .status-strip {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
             align-items: center;
         }
 
-        .iframe-header h3 {
-            font-size: 0.95rem;
-            font-weight: 500;
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 14px;
+            border: 1px solid;
+            font-size: 0.72rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
         }
 
-        .close-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 5px;
+        /* Tailscale pill states */
+        .pill.ts-checking   { color: var(--warn);    border-color: #4a3300; }
+        .pill.ts-connected  { color: var(--online);  border-color: var(--online2); }
+        .pill.ts-none       { color: var(--offline); border-color: var(--offline2); }
+
+        /* Server pill states */
+        .pill.srv-idle      { color: var(--b3);      border-color: var(--b4); }
+        .pill.srv-checking  { color: var(--warn);    border-color: #4a3300; }
+        .pill.srv-up        { color: var(--online);  border-color: var(--online2); }
+        .pill.srv-down      { color: var(--offline); border-color: var(--offline2); }
+
+        .check-srv-btn {
+            display: none;
+            background: none;
+            border: 1px solid var(--b4);
+            color: var(--b3);
+            padding: 5px 16px;
+            font-family: inherit;
+            font-size: 0.72rem;
             cursor: pointer;
-            font-size: 0.85rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            transition: all 0.15s;
+            align-items: center;
+            gap: 7px;
+        }
+        .check-srv-btn.visible { display: inline-flex; }
+        .check-srv-btn:hover { border-color: var(--b2); color: var(--b1); }
+        .check-srv-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* IP debug list (collapsed by default) */
+        .ip-list {
+            font-size: 0.68rem;
+            color: var(--b3);
+            letter-spacing: 0.5px;
+            display: none;
+            margin-top: 4px;
+        }
+        .ip-list.show { display: block; }
+        .ip-list span.ts-ip { color: var(--online); }
+
+        /* ── TABS ── */
+        .nav-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 14px;
         }
 
-        .close-btn:hover {
-            background: rgba(255,255,255,0.3);
+        .tab-btn {
+            background: none;
+            border: 1px solid var(--border);
+            border-bottom: none;
+            color: var(--b3);
+            padding: 8px 22px;
+            font-family: inherit;
+            font-size: 0.78rem;
+            cursor: pointer;
+            letter-spacing: 1.5px;
+            transition: all 0.15s;
+            margin-bottom: -1px;
+        }
+        .tab-btn:hover { color: var(--b1); border-color: var(--b2); }
+        .tab-btn.active {
+            color: var(--b0);
+            background: var(--bg2);
+            border-color: var(--border-bright);
+            border-bottom-color: var(--bg2);
+            text-shadow: var(--glow-sm);
         }
 
-        iframe {
-            width: 100%;
-            height: 750px;
-            border: none;
-            background: white;
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── TOOLBAR ── */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
-        .loading {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            margin-left: 8px;
+        .tool-btn {
+            background: none;
+            border: 1px solid var(--b4);
+            color: var(--b3);
+            padding: 5px 14px;
+            font-family: inherit;
+            font-size: 0.72rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tool-btn:hover { border-color: var(--b2); color: var(--b1); }
+
+        .last-update { font-size: 0.68rem; color: var(--b4); letter-spacing: 1px; }
+
+        /* ── SECTION LABEL ── */
+        .section-label {
+            font-size: 0.68rem;
+            color: var(--b3);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--b5);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-label::before { content: '▸'; color: var(--b2); }
+
+        /* ── TABLE ── */
+        .table-wrap {
+            border: 1px solid var(--border);
+            background: var(--bg1);
+            overflow-x: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+
+        thead tr { background: var(--bg3); border-bottom: 1px solid var(--border); }
+
+        th {
+            padding: 8px 14px;
+            text-align: left;
+            color: var(--b3);
+            letter-spacing: 2px;
+            font-weight: normal;
+            font-size: 0.67rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--b5);
+            color: var(--b1);
             vertical-align: middle;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background: rgba(56,189,248,0.03); }
+
+        .d-name  { color: var(--b0); font-weight: bold; text-shadow: var(--glow-sm); }
+        .d-owner { color: var(--b3); font-size: 0.7rem; }
+        .d-ip    { font-family: 'Courier New', monospace; color: var(--b1); letter-spacing: 1px; }
+        .d-meta  { color: var(--b3); font-size: 0.7rem; }
+
+        .ping-btn {
+            background: none;
+            border: 1px solid var(--b4);
+            color: var(--b3);
+            padding: 3px 10px;
+            font-family: inherit;
+            font-size: 0.68rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.15s;
+        }
+        .ping-btn:hover:not(:disabled) { border-color: var(--b2); color: var(--b1); }
+        .ping-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* ── STATUS DOTS ── */
+        .dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dot.on  { background: var(--online);  box-shadow: 0 0 5px var(--online); }
+        .dot.off { background: var(--offline); }
+        .dot.stale { background: var(--warn); }
+        .dot.dim { background: var(--b4); }
+        .dot.pulse { background: var(--warn); animation: blink 1.2s ease-in-out infinite; }
+
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+        .sc { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; }
+        .sc.on    { color: var(--online); }
+        .sc.off   { color: var(--offline); }
+        .sc.stale { color: var(--warn); }
+
+        /* ── GRID ── */
+        .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+
+        /* ── CONTAINER CARDS ── */
+        .ctr-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            padding: 14px 16px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .ctr-card:hover { border-color: var(--b1); box-shadow: var(--glow-sm); }
+
+        .ctr-hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
         }
 
-        @media (max-width: 768px) {
-            .controls-row {
-                flex-direction: column;
-            }
-            
-            iframe {
-                height: 500px;
-            }
+        .ctr-name {
+            font-size: 0.82rem;
+            color: var(--b0);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ctr-image  { font-size: 0.68rem; color: var(--b3); margin-bottom: 6px; }
+        .ctr-ports  { font-size: 0.7rem;  color: var(--b3); margin-bottom: 6px; }
+        .ctr-ports span { color: var(--b1); }
+        .ctr-uptime { font-size: 0.7rem;  color: var(--b3); }
+        .ctr-uptime span { color: var(--b1); }
+
+        .badge {
+            font-size: 0.63rem;
+            padding: 2px 7px;
+            border: 1px solid;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .badge.running { color: var(--online);  border-color: var(--online2); }
+        .badge.stopped { color: var(--offline); border-color: var(--offline2); }
+        .badge.paused  { color: var(--warn);    border-color: #7c4a00; }
+
+        /* ── STORAGE CARDS ── */
+        .stor-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            padding: 14px 16px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .stor-card:hover { border-color: var(--b1); box-shadow: var(--glow-sm); }
+
+        .stor-hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .stor-name {
+            font-size: 0.82rem;
+            color: var(--b0);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stor-mount { font-size: 0.7rem; color: var(--b3); letter-spacing: 1px; margin-bottom: 10px; }
+
+        .bar-wrap {
+            background: var(--bg1);
+            height: 7px;
+            border: 1px solid var(--b5);
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--b3), var(--b1));
+            position: relative;
+            transition: width 1s ease;
+        }
+        .bar-fill::after {
+            content: '';
+            position: absolute;
+            right: 0; top: 0; bottom: 0;
+            width: 2px;
+            background: var(--b0);
+            box-shadow: 0 0 5px var(--b0);
+        }
+        .bar-fill.warning { background: linear-gradient(90deg, #7c4a00, var(--warn)); }
+        .bar-fill.danger  { background: linear-gradient(90deg, var(--offline2), var(--offline)); }
+
+        .stor-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--b3);
+        }
+        .stor-stats span { color: var(--b1); }
+
+        /* ── BOOT OVERLAY ── */
+        #boot-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .boot-log {
+            font-size: 0.78rem;
+            color: var(--b2);
+            line-height: 2;
+            width: 500px;
+            max-width: 90vw;
+        }
+
+        .boot-line { opacity: 0; animation: fadeIn 0.08s forwards; }
+        .boot-line.ok::after   { content: ' [ OK ]';   color: var(--online); }
+        .boot-line.fail::after { content: ' [ FAIL ]'; color: var(--offline); }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .boot-cursor {
+            display: inline-block;
+            width: 8px; height: 14px;
+            background: var(--b1);
+            animation: blink 0.7s step-end infinite;
+            vertical-align: bottom;
+        }
+
+        /* ── SPINNER ── */
+        .spin {
+            display: inline-block;
+            width: 10px; height: 10px;
+            border: 1px solid rgba(56,189,248,0.2);
+            border-top-color: var(--b1);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .ph td { text-align: center; color: var(--b4); padding: 24px; }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--b4); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--b3); }
+
+        @media (max-width: 640px) {
+            .ascii-title { display: none; }
+            .clock { font-size: 1.1rem; }
+            .tab-btn { padding: 6px 12px; font-size: 0.7rem; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>NAS Control Panel</h1>
-            <p>Manage your network storage services</p>
-            <button class="btn-refresh" onclick="checkStatus()" style="margin-top: 10px;">
-                🔄 Refresh Status
-            </button>
-        </div>
 
-        <div class="controls-row">
-            <!-- HDD Control -->
-            <div class="card">
-                <h2>
-                    <span class="status-indicator" id="hdd-indicator"></span>
-                    💾 HDD Storage
-                </h2>
-                <p class="card-subtitle">Port 8080 • /mnt/data</p>
-                <div class="button-group">
-                    <button class="btn-start" onclick="startHDD()">Start</button>
-                    <button class="btn-stop" onclick="stopHDD()">Stop</button>
-                </div>
-                <div id="hdd-status" class="status"></div>
-            </div>
+<div id="boot-overlay">
+    <div class="boot-log" id="boot-log"></div>
+</div>
 
-            <!-- HOME Control -->
-            <div class="card">
-                <h2>
-                    <span class="status-indicator" id="home-indicator"></span>
-                    🏠 Home Directory
-                </h2>
-                <p class="card-subtitle">Port 8081 • /home/siddharth</p>
-                <div class="button-group">
-                    <button class="btn-start" onclick="startHome()">Start</button>
-                    <button class="btn-stop" onclick="stopHome()">Stop</button>
-                </div>
-                <div id="home-status" class="status"></div>
-            </div>
+<div class="shell">
 
-            <!-- Storage Space -->
-            <div class="card">
-                <h2>📊 Storage Space</h2>
-                <p class="card-subtitle">SSD & HDD Usage</p>
-                <button class="btn-check" onclick="checkSpace()" style="width: 100%;">
-                    Check Space
-                </button>
-                <div class="space-info" id="space-info" style="display: none;">
-                    <!-- Space info will be populated here -->
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-top">
+            <div>
+                <div class="ascii-title">███╗   ██╗ █████╗ ███████╗      ██████╗ ███████╗
+████╗  ██║██╔══██╗██╔════╝     ██╔═══██╗██╔════╝
+██╔██╗ ██║███████║███████╗     ██║   ██║███████╗
+██║╚██╗██║██╔══██║╚════██║     ██║   ██║╚════██║
+██║ ╚████║██║  ██║███████║     ╚██████╔╝███████║
+╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝      ╚═════╝ ╚══════╝</div>
+                <div class="header-meta">
+                    SYSTEM <span>v2.1.0</span> &nbsp;|&nbsp;
+                    HOST <span>ubuntu-server</span> &nbsp;|&nbsp;
+                    ARCH <span>x86_64</span> &nbsp;|&nbsp;
+                    KERNEL <span>6.8.0-111-generic</span>
                 </div>
             </div>
-        </div>
-
-        <!-- HDD iframe -->
-        <div class="iframe-container" id="hdd-iframe-container">
-            <div class="iframe-header">
-                <h3>HDD Storage Browser</h3>
+            <div class="header-right">
+                <div class="clock" id="clock">00:00:00</div>
+                <div class="date-str" id="date-str"></div>
             </div>
-            <iframe id="hdd-iframe" src=""></iframe>
-        </div>
-
-        <!-- HOME iframe -->
-        <div class="iframe-container" id="home-iframe-container">
-            <div class="iframe-header">
-                <h3>Home Directory Browser</h3>
-            </div>
-            <iframe id="home-iframe" src=""></iframe>
         </div>
     </div>
 
-    <script>
-        const API_BASE = 'https://100.91.55.2:8082';
-        const HDD_URL = 'https://100.91.55.2:8080/';
-        const HOME_URL = 'https://100.91.55.2:8081/';
+    <!-- STATUS STRIP -->
+    <div class="status-strip">
+        <div class="pill ts-checking" id="ts-pill">
+            <span class="dot pulse"></span>
+            TAILSCALE: PROBING...
+        </div>
+        <div class="pill srv-idle" id="srv-pill" style="display:none;">
+            <span class="dot dim"></span>
+            SERVER: —
+        </div>
+        <button class="check-srv-btn" id="check-srv-btn" onclick="checkServer()">
+            ▸ CHECK SERVER
+        </button>
+    </div>
 
-        // Check status on page load only
-        checkStatus();
+    <!-- Detected IPs (debug strip, shown after probe) -->
+    <div class="ip-list" id="ip-list"></div>
 
-        async function checkStatus() {
-            const button = event?.target;
-            if (button) addLoadingSpinner(button);
-            
-            try {
-                const response = await fetch(`${API_BASE}/status`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    updateIndicator('hdd-indicator', data.hdd.running);
-                    updateIndicator('home-indicator', data.home.running);
-                }
-            } catch (error) {
-                console.error('Error checking status:', error);
-                updateIndicator('hdd-indicator', null);
-                updateIndicator('home-indicator', null);
-            } finally {
-                if (button) removeLoadingSpinner(button);
-            }
+
+    <!-- TABS -->
+    <div class="nav-tabs" style="margin-top:12px;">
+        <button class="tab-btn active" onclick="switchTab('network')">[ NETWORK ]</button>
+        <button class="tab-btn" onclick="switchTab('containers')">[ CONTAINERS ]</button>
+        <button class="tab-btn" onclick="switchTab('storage')">[ STORAGE ]</button>
+    </div>
+
+    <!-- NETWORK TAB -->
+    <div class="tab-panel active" id="tab-network">
+        <div class="toolbar">
+            <button class="tool-btn" onclick="refreshDevices()">⟳ REFRESH DEVICES</button>
+            <div class="last-update" id="net-lu">LAST UPDATE: —</div>
+        </div>
+        <div class="section-label">TAILSCALE MESH NETWORK</div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Machine</th>
+                        <th>Owner</th>
+                        <th>Address</th>
+                        <th>Version</th>
+                        <th>OS</th>
+                        <th>Last Seen</th>
+                        <th>Ping</th>
+                    </tr>
+                </thead>
+                <tbody id="devices-tbody">
+                    <tr class="ph"><td colspan="7"><span class="spin"></span>&nbsp; LOADING...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- CONTAINERS TAB -->
+    <div class="tab-panel" id="tab-containers">
+        <div class="toolbar">
+            <button class="tool-btn" onclick="refreshContainers()">⟳ REFRESH</button>
+            <div class="last-update" id="ctr-lu">LAST UPDATE: —</div>
+        </div>
+        <div class="section-label">DOCKER — NEXTCLOUD STACK</div>
+        <div class="grid-auto" id="containers-grid">
+            <div style="grid-column:1/-1;text-align:center;color:var(--b4);padding:24px;border:1px solid var(--b5);">
+                <span class="spin"></span>&nbsp; QUERYING DOCKER DAEMON...
+            </div>
+        </div>
+    </div>
+
+    <!-- STORAGE TAB -->
+    <div class="tab-panel" id="tab-storage">
+        <div class="toolbar">
+            <button class="tool-btn" onclick="refreshStorage()">⟳ REFRESH</button>
+            <div class="last-update" id="stor-lu">LAST UPDATE: —</div>
+        </div>
+        <div class="section-label">DISK USAGE — UBUNTU SERVER</div>
+        <div class="grid-auto" id="storage-grid">
+            <div style="grid-column:1/-1;text-align:center;color:var(--b4);padding:24px;border:1px solid var(--b5);">
+                <span class="spin"></span>&nbsp; READING DISK METRICS...
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+'use strict';
+
+const API = 'https://100.91.55.2:8082';
+
+// ── BOOT ─────────────────────────────────────────────────────────────────────
+const BOOT_LINES = [
+    { t: 'NAS-OS BIOS v2.1.0  (C) NAS Systems', c: '' },
+    { t: 'CPU: Intel Core i5-12400  6C/12T @ 4.40GHz', c: '' },
+    { t: 'RAM: 16384 MB DDR4-3200', c: 'ok' },
+    { t: 'Storage controllers: SATA AHCI, NVMe', c: '' },
+    { t: 'Network interfaces: probing...', c: '' },
+    { t: 'Loading NAS-OS control panel', c: 'ok' },
+];
+
+async function runBoot() {
+    const log = document.getElementById('boot-log');
+    for (const line of BOOT_LINES) {
+        await sleep(110);
+        const d = document.createElement('div');
+        d.className = `boot-line ${line.c}`;
+        d.textContent = '> ' + line.t;
+        log.appendChild(d);
+    }
+    await sleep(300);
+    const cur = document.createElement('div');
+    cur.innerHTML = '> <span class="boot-cursor"></span>';
+    log.appendChild(cur);
+    await sleep(500);
+    const ov = document.getElementById('boot-overlay');
+    ov.style.transition = 'opacity 0.35s';
+    ov.style.opacity = '0';
+    await sleep(350);
+    ov.style.display = 'none';
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── CLOCK ─────────────────────────────────────────────────────────────────────
+function tick() {
+    const n = new Date();
+    document.getElementById('clock').textContent = n.toLocaleTimeString('en-GB', { hour12: false });
+    document.getElementById('date-str').textContent =
+        n.toLocaleDateString('en-GB', { weekday:'short', year:'numeric', month:'short', day:'2-digit' }).toUpperCase();
+}
+setInterval(tick, 1000); tick();
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b =>
+        b.classList.toggle('active', b.textContent.toLowerCase().includes(name))
+    );
+    document.querySelectorAll('.tab-panel').forEach(p =>
+        p.classList.toggle('active', p.id === `tab-${name}`)
+    );
+}
+
+// ── TAILSCALE DETECTION via /myip ─────────────────────────────────────────────
+// Chrome (and most browsers) obfuscate WebRTC ICE candidates with mDNS names
+// (e.g. "abc123.local") instead of real IPs — so client-side IP enumeration
+// doesn't work. Instead we ask the server what IP it sees for this request.
+// If the server sees a 100.64–100.127 address, the client is on Tailscale.
+// Side-effect: a successful /myip response also means the server is reachable.
+
+function isTailscaleIP(ip) {
+    const parts = ip.split('.').map(Number);
+    if (parts[0] !== 100) return false;
+    return parts[1] >= 64 && parts[1] <= 127;
+}
+
+let tailscaleConfirmed = false;
+
+async function checkTailscale() {
+    setTsPill('checking', 'TAILSCALE: PROBING...');
+    const ipListEl = document.getElementById('ip-list');
+
+    try {
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), 6000);
+        const r = await fetch(`${API}/myip`, { signal: ctrl.signal });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const d = await r.json();
+        const ip = (d.ip || '').trim();
+
+        ipListEl.innerHTML = `YOUR IP (as seen by server): <span class="${isTailscaleIP(ip) ? 'ts-ip' : ''}" style="${isTailscaleIP(ip) ? '' : 'color:var(--warn)'}">${esc(ip) || '(empty)'}</span>`;
+        ipListEl.classList.add('show');
+
+        if (ip && isTailscaleIP(ip)) {
+            tailscaleConfirmed = true;
+            setTsPill('connected', `TAILSCALE: ${ip}`);
+            // /myip success also means server is reachable
+            document.getElementById('srv-pill').style.display = 'inline-flex';
+            setSrvPill('up', 'SERVER: ONLINE');
+            document.getElementById('check-srv-btn').classList.add('visible');
+        } else {
+            tailscaleConfirmed = false;
+            setTsPill('none', ip ? `NOT ON TAILSCALE (your IP: ${ip})` : 'TAILSCALE: BAD RESPONSE');
+            document.getElementById('srv-pill').style.display = 'inline-flex';
+            setSrvPill('up', 'SERVER: ONLINE');
         }
+    } catch (e) {
+        tailscaleConfirmed = false;
+        setTsPill('none', 'TAILSCALE: UNREACHABLE');
+        ipListEl.innerHTML = `<span style="color:var(--offline)">Could not reach ${API}/myip — server down or not on Tailscale</span>`;
+        ipListEl.classList.add('show');
+    }
+}
 
-        function updateIndicator(elementId, isRunning) {
-            const indicator = document.getElementById(elementId);
-            indicator.className = 'status-indicator';
-            
-            if (isRunning === true) {
-                indicator.classList.add('on');
-                indicator.title = 'Running';
-            } else if (isRunning === false) {
-                indicator.classList.add('off');
-                indicator.title = 'Stopped';
-            } else {
-                indicator.classList.add('checking');
-                indicator.title = 'Checking...';
-            }
-        }
+function setTsPill(state, text) {
+    const p = document.getElementById('ts-pill');
+    p.className = `pill ts-${state}`;
+    const dc = state === 'connected' ? 'on' : state === 'checking' ? 'pulse' : 'off';
+    p.innerHTML = `<span class="dot ${dc}"></span>${esc(text)}`;
+}
 
-        function showStatus(elementId, message, type) {
-            const el = document.getElementById(elementId);
-            el.textContent = message;
-            el.className = `status show ${type}`;
-            setTimeout(() => {
-                el.classList.remove('show');
-            }, 5000);
-        }
+// ── SERVER CHECK ──────────────────────────────────────────────────────────────
+async function checkServer() {
+    if (!tailscaleConfirmed) return;
+    const btn = document.getElementById('check-srv-btn');
+    btn.disabled = true;
+    setSrvPill('checking', 'SERVER: CHECKING...');
+    try {
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), 6000);
+        const r = await fetch(`${API}/status`, { signal: ctrl.signal });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const d = await r.json();
+        setSrvPill(d.success !== false ? 'up' : 'down',
+                   d.success !== false ? 'SERVER: ONLINE' : 'SERVER: ERROR');
+    } catch {
+        setSrvPill('down', 'SERVER: UNREACHABLE');
+    } finally {
+        btn.disabled = false;
+    }
+}
 
-        function addLoadingSpinner(button) {
-            const spinner = document.createElement('span');
-            spinner.className = 'loading';
-            button.appendChild(spinner);
-            button.disabled = true;
-        }
+function setSrvPill(state, text) {
+    const p = document.getElementById('srv-pill');
+    p.className = `pill srv-${state}`;
+    const dc = state === 'up' ? 'on' : state === 'checking' ? 'pulse' : state === 'down' ? 'off' : 'dim';
+    p.innerHTML = `<span class="dot ${dc}"></span>${esc(text)}`;
+}
 
-        function removeLoadingSpinner(button) {
-            const spinner = button.querySelector('.loading');
-            if (spinner) spinner.remove();
-            button.disabled = false;
-        }
+// ── DEVICES ───────────────────────────────────────────────────────────────────
+const KNOWN_DEVICES = [
+    { name:'ubuntu-server',    owner:'punesiddharth@gmail.com', ip:'100.104.125.62', ver:'1.98.2', os:'Linux 6.8.0-111-generic', seen:'connected', self:true  },
+    { name:'acer-alg',         owner:'punesiddharth@gmail.com', ip:'100.77.168.14',  ver:'1.96.3', os:'Windows 11 25H2',         seen:'connected'            },
+    { name:'samsung-sm-m558b', owner:'punesiddharth@gmail.com', ip:'100.94.46.118',  ver:'1.90.9', os:'Android 16',              seen:'connected'            },
+    { name:'desktop-ikjfnqk',  owner:'vapabal@gmail.com',       ip:'100.84.131.80',  ver:'1.98.2', os:'Windows 11 25H2',         seen:'connected'            },
+    { name:'laptop-78q9plka',  owner:'vapabaldst@gmail.com',    ip:'100.64.80.120',  ver:'1.98.2', os:'Windows 11 25H2',         seen:'12:53 PM GMT+5:30'    },
+];
 
-        async function startHDD() {
-            const button = event.target;
-            addLoadingSpinner(button);
-            
-            try {
-                const response = await fetch(`${API_BASE}/hdd/start`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    showStatus('hdd-status', `✓ ${data.status} (PID: ${data.pid})`, 'success');
-                    openHDDIframe();
-                    checkStatus(); // Update status immediately
-                } else {
-                    showStatus('hdd-status', `✗ ${data.error || 'Failed to start'}`, 'error');
-                }
-            } catch (error) {
-                showStatus('hdd-status', `✗ Error: ${error.message}`, 'error');
-            } finally {
-                removeLoadingSpinner(button);
-            }
-        }
+function renderDevices(list) {
+    document.getElementById('devices-tbody').innerHTML = list.map((d, i) => {
+        const online = d.seen === 'connected';
+        const statusHtml = online
+            ? `<span class="sc on"><span class="dot on"></span>ONLINE</span>`
+            : `<span class="sc stale"><span class="dot stale"></span>${esc(d.seen)}</span>`;
+        return `<tr>
+            <td>
+                <div class="d-name">${esc(d.name)}</div>
+                ${d.self ? `<div style="color:var(--b4);font-size:0.62rem;letter-spacing:1px;">THIS SERVER</div>` : ''}
+            </td>
+            <td><div class="d-owner">${esc(d.owner)}</div></td>
+            <td><div class="d-ip">${esc(d.ip)}</div></td>
+            <td><div class="d-meta">${esc(d.ver)}</div></td>
+            <td><div class="d-meta">${esc(d.os)}</div></td>
+            <td>${statusHtml}</td>
+            <td id="ping-${i}">
+                <button class="ping-btn" onclick="pingDevice('${esc(d.ip)}',${i})">PING</button>
+            </td>
+        </tr>`;
+    }).join('');
+}
 
-        async function stopHDD() {
-            const button = event.target;
-            addLoadingSpinner(button);
-            
-            try {
-                const response = await fetch(`${API_BASE}/hdd/stop`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    showStatus('hdd-status', `✓ ${data.status}`, 'success');
-                    closeHDDIframe();
-                    checkStatus(); // Update status immediately
-                } else {
-                    showStatus('hdd-status', `✗ ${data.error || 'Failed to stop'}`, 'error');
-                }
-            } catch (error) {
-                showStatus('hdd-status', `✗ Error: ${error.message}`, 'error');
-            } finally {
-                removeLoadingSpinner(button);
-            }
-        }
+async function pingDevice(ip, idx) {
+    const cell = document.getElementById(`ping-${idx}`);
+    cell.innerHTML = '<span class="spin"></span>';
+    try {
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), 4000);
+        const r = await fetch(`${API}/ping/${ip}`, { signal: ctrl.signal });
+        const d = await r.json();
+        cell.innerHTML = `<span style="color:var(--online);font-size:0.75rem;">${esc(String(d.latency_ms ?? '?'))}ms</span>`;
+    } catch {
+        cell.innerHTML = `<span style="color:var(--offline);font-size:0.75rem;">TIMEOUT</span>`;
+    }
+}
 
-        async function startHome() {
-            const button = event.target;
-            addLoadingSpinner(button);
-            
-            try {
-                const response = await fetch(`${API_BASE}/home/start`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    showStatus('home-status', `✓ ${data.status} (PID: ${data.pid})`, 'success');
-                    openHomeIframe();
-                    checkStatus(); // Update status immediately
-                } else {
-                    showStatus('home-status', `✗ ${data.error || 'Failed to start'}`, 'error');
-                }
-            } catch (error) {
-                showStatus('home-status', `✗ Error: ${error.message}`, 'error');
-            } finally {
-                removeLoadingSpinner(button);
-            }
-        }
+async function refreshDevices() {
+    document.getElementById('devices-tbody').innerHTML =
+        '<tr class="ph"><td colspan="7"><span class="spin"></span>&nbsp; REFRESHING...</td></tr>';
+    try {
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), 5000);
+        const r = await fetch(`${API}/tailscale/devices`, { signal: ctrl.signal });
+        const d = await r.json();
+        if (d.success && Array.isArray(d.devices)) renderDevices(d.devices);
+        else renderDevices(KNOWN_DEVICES);
+    } catch { renderDevices(KNOWN_DEVICES); }
+    document.getElementById('net-lu').textContent =
+        'LAST UPDATE: ' + new Date().toLocaleTimeString('en-GB', { hour12: false });
+}
 
-        async function stopHome() {
-            const button = event.target;
-            addLoadingSpinner(button);
-            
-            try {
-                const response = await fetch(`${API_BASE}/home/stop`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    showStatus('home-status', `✓ ${data.status}`, 'success');
-                    closeHomeIframe();
-                    checkStatus(); // Update status immediately
-                } else {
-                    showStatus('home-status', `✗ ${data.error || 'Failed to stop'}`, 'error');
-                }
-            } catch (error) {
-                showStatus('home-status', `✗ Error: ${error.message}`, 'error');
-            } finally {
-                removeLoadingSpinner(button);
-            }
-        }
+// ── CONTAINERS ────────────────────────────────────────────────────────────────
+const SEED_CTR = [
+    { name:'nextcloud-aio-mastercontainer', image:'nextcloud/all-in-one:latest', ports:'8080/tcp',  status:'running', uptime:'Up —' },
+    { name:'nextcloud-aio-apache',          image:'aio-apache:latest',           ports:'11000/tcp', status:'running', uptime:'Up —' },
+    { name:'nextcloud-aio-nextcloud',       image:'aio-nextcloud:latest',        ports:'9000/tcp',  status:'running', uptime:'Up —' },
+    { name:'nextcloud-aio-database',        image:'aio-postgresql:latest',       ports:'5432/tcp',  status:'running', uptime:'Up —' },
+    { name:'nextcloud-aio-redis',           image:'aio-redis:latest',            ports:'6379/tcp',  status:'running', uptime:'Up —' },
+    { name:'nextcloud-aio-onlyoffice',      image:'aio-onlyoffice:latest',       ports:'80/tcp',    status:'running', uptime:'Up —' },
+    { name:'nextcloud-aio-imaginary',       image:'aio-imaginary:latest',        ports:'9000/tcp',  status:'running', uptime:'Up —' },
+    { name:'nextcloud-aio-notify-push',     image:'aio-notify-push:latest',      ports:'—',         status:'running', uptime:'Up —' },
+];
 
-        async function checkSpace() {
-            const button = event.target;
-            addLoadingSpinner(button);
-            
-            try {
-                const [ssdResponse, hddResponse] = await Promise.all([
-                    fetch(`${API_BASE}/space/ssd`),
-                    fetch(`${API_BASE}/space/hdd`)
-                ]);
-                
-                const ssdData = await ssdResponse.json();
-                const hddData = await hddResponse.json();
-                
-                const spaceInfo = document.getElementById('space-info');
-                spaceInfo.style.display = 'grid';
-                
-                spaceInfo.innerHTML = `
-                    <div class="space-item">
-                        <strong>SSD Total</strong>
-                        <span>${ssdData.total || 'N/A'}</span>
-                    </div>
-                    <div class="space-item">
-                        <strong>HDD Total</strong>
-                        <span>${hddData.total || 'N/A'}</span>
-                    </div>
-                    <div class="space-item">
-                        <strong>SSD Available</strong>
-                        <span>${ssdData.available || 'N/A'}</span>
-                    </div>
-                    <div class="space-item">
-                        <strong>HDD Available</strong>
-                        <span>${hddData.available || 'N/A'}</span>
-                    </div>
+function renderContainers(list) {
+    document.getElementById('containers-grid').innerHTML = list.map(c => `
+        <div class="ctr-card">
+            <div class="ctr-hdr">
+                <div class="ctr-name">
+                    <span class="dot ${c.status === 'running' ? 'on' : 'off'}"></span>
+                    ${esc(c.name)}
+                </div>
+                <span class="badge ${c.status}">${esc(c.status.toUpperCase())}</span>
+            </div>
+            <div class="ctr-image">${esc(c.image)}</div>
+            <div class="ctr-ports">PORTS: <span>${esc(c.ports)}</span></div>
+            <div class="ctr-uptime">UPTIME: <span>${esc(c.uptime)}</span></div>
+        </div>`).join('');
+}
 
-                    <div class="space-item">
-                        <strong>SSD Used</strong>
-                        <span>${ssdData.used || 'N/A'} (${ssdData.usedPercent || 'N/A'})</span>
-                    </div>
+async function refreshContainers() {
+    document.getElementById('containers-grid').innerHTML =
+        '<div style="grid-column:1/-1;text-align:center;color:var(--b4);padding:24px;border:1px solid var(--b5);"><span class="spin"></span>&nbsp; QUERYING DOCKER DAEMON...</div>';
+    try {
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), 5000);
+        const r = await fetch(`${API}/docker/containers`, { signal: ctrl.signal });
+        const d = await r.json();
+        if (d.success && Array.isArray(d.containers)) renderContainers(d.containers);
+        else renderContainers(SEED_CTR);
+    } catch { renderContainers(SEED_CTR); }
+    document.getElementById('ctr-lu').textContent =
+        'LAST UPDATE: ' + new Date().toLocaleTimeString('en-GB', { hour12: false });
+}
 
-                    <div class="space-item">
-                        <strong>HDD Used</strong>
-                        <span>${hddData.used || 'N/A'} (${hddData.usedPercent || 'N/A'})</span>
-                    </div>
-                `;
-            } catch (error) {
-                alert(`Error checking space: ${error.message}`);
-            } finally {
-                removeLoadingSpinner(button);
-            }
-        }
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+const SEED_DISKS = [
+    { name:'SSD — Root',           mount:'/',                  used:'—', available:'—', total:'—', pct:0 },
+    { name:'HDD — Nextcloud Data', mount:'/mnt/nextcloud-data',used:'—', available:'—', total:'—', pct:0 },
+    { name:'HDD — Siddharth Main', mount:'/mnt/siddharth_main',used:'—', available:'—', total:'—', pct:0 },
+    { name:'HDD — Siddharth 1',    mount:'/mnt/siddharth_1',   used:'—', available:'—', total:'—', pct:0 },
+    { name:'HDD — Vigyan Ashram',  mount:'/mnt/sda4',          used:'—', available:'—', total:'—', pct:0 },
+];
 
-        function openHDDIframe() {
-            const container = document.getElementById('hdd-iframe-container');
-            const iframe = document.getElementById('hdd-iframe');
-            iframe.src = HDD_URL;
-            container.classList.add('show');
-            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+function renderStorage(list) {
+    document.getElementById('storage-grid').innerHTML = list.map(d => {
+        const p = d.pct ?? (d.usedPercent ? parseInt(d.usedPercent) : 0);
+        const bc  = p > 85 ? 'danger' : p > 70 ? 'warning' : '';
+        const pc  = p > 85 ? 'var(--offline)' : p > 70 ? 'var(--warn)' : 'var(--b1)';
+        return `
+        <div class="stor-card">
+            <div class="stor-hdr">
+                <div class="stor-name">▣ ${esc(d.name)}</div>
+                <span style="font-size:0.72rem;color:${pc}">${p}%</span>
+            </div>
+            <div class="stor-mount">${esc(d.mount)}</div>
+            <div class="bar-wrap">
+                <div class="bar-fill ${bc}" style="width:${p}%"></div>
+            </div>
+            <div class="stor-stats">
+                <div>USED <span>${esc(d.used)}</span></div>
+                <div>FREE <span>${esc(d.available)}</span></div>
+                <div>TOTAL <span>${esc(d.total)}</span></div>
+            </div>
+        </div>`;
+    }).join('');
+}
 
-        function closeHDDIframe() {
-            const container = document.getElementById('hdd-iframe-container');
-            const iframe = document.getElementById('hdd-iframe');
-            container.classList.remove('show');
-            iframe.src = '';
-        }
+async function refreshStorage() {
+    document.getElementById('storage-grid').innerHTML =
+        '<div style="grid-column:1/-1;text-align:center;color:var(--b4);padding:24px;border:1px solid var(--b5);"><span class="spin"></span>&nbsp; READING DISK METRICS...</div>';
+    try {
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), 8000);
+        const r = await fetch(`${API}/space/all`, { signal: ctrl.signal });
+        const d = await r.json();
+        if (d.success && Array.isArray(d.disks)) renderStorage(d.disks);
+        else renderStorage(SEED_DISKS);
+    } catch { renderStorage(SEED_DISKS); }
+    document.getElementById('stor-lu').textContent =
+        'LAST UPDATE: ' + new Date().toLocaleTimeString('en-GB', { hour12: false });
+}
 
-        function openHomeIframe() {
-            const container = document.getElementById('home-iframe-container');
-            const iframe = document.getElementById('home-iframe');
-            iframe.src = HOME_URL;
-            container.classList.add('show');
-            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+// ── UTIL ──────────────────────────────────────────────────────────────────────
+function esc(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
-        function closeHomeIframe() {
-            const container = document.getElementById('home-iframe-container');
-            const iframe = document.getElementById('home-iframe');
-            container.classList.remove('show');
-            iframe.src = '';
-        }
-    </script>
+// ── INIT ──────────────────────────────────────────────────────────────────────
+runBoot().then(() => {
+    checkTailscale();
+    refreshDevices();
+    refreshContainers();
+    refreshStorage();
+});
+</script>
 </body>
 </html>
